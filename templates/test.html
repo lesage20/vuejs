@@ -1,0 +1,15 @@
+<div class="jumbotron my-3 " v-show="readText == true">
+    <h1 class="display-4" v-if="quizz_passed != true">Bienvenu, ${user}!</h1>
+    <h1 class="display-4" >Cher, ${user}!</h1>
+    <p class="lead" v-if="quizz_passed != true">
+        Vous êtes sur le point de passer le test de certification en developpement web avec python
+    </p>
+    <p class="lead" >
+        Vous êtes avez déja passé  le test de certification en developpement web
+    </p>
+    <hr class="my-4">
+    <p v-if="quizz_passed != true">Ce test a pour but de tester vos competence en informatique et surtout en programmation web</p>
+    <p >Voulez-vous le réessayer?</p>
+    <a class="btn btn-primary btn-lg" href="#" role="button" @click="beforeStarting" v-if="quizz_passed != true">Commencer</a>
+    <a class="btn btn-primary btn-lg" href="#" role="button" @click="beforeStarting" >Refaire le quizz</a>
+</div>

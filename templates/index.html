@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div id="app">
+    <!-- entrer le nom d'utilisateur -->
+    <div class="jumbotron my-3" v-if="nameNotEntered">
+        <div class="container">
+            <h3 class="text-muted ml-2 text-center">Veuillez entrer votre nom</h3>
+            <hr>
+            <form action="" @submit.prevent>
+                <div class="form-group d-flex justify-content-center mx-auto">
+                    <div class="col-5">
+                        <input type="text" name="username" id="username" v-model="user" class="form-control "
+                            placeholder="Veuillez saisir votre nom">
+                        <p class="text-danger">
+                            ${message}
+                        </p>
+                    </div>
+                    <div class="col-2">
+                        <button class="btn btn-primary" @click="checkUsername">
+                            valider
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Accueil avec le nom d'utilisateur -->
+    <div class="jumbotron my-3 " v-show="readText == true">
+        <h1 class="display-4" v-if="quizz_passed != true">Bienvenu, ${user}!</h1>
+        <h1 class="display-4" v-else>Cher, ${user}!</h1>
+        <p class="lead" v-if="quizz_passed != true">
+            Vous êtes sur le point de passer le test de certification en developpement web avec python
+        </p>
+        <p class="lead" v-else>
+            Vous avez déja passé le test de certification en developpement web
+        </p>
+        <hr class="my-4">
+        <p v-if="quizz_passed != true">Ce test a pour but de tester vos competence en informatique et surtout en
+            programmation web</p>
+        <p v-else>Vous pouvez le refaire c'est gratuit :) Voulez-vous le réessayer?</p>
+        <a class="btn btn-primary btn-lg" href="#" role="button" @click="beforeStarting"
+            v-if="quizz_passed != true">Commencer</a>
+        <a class="btn btn-primary btn-lg" href="#" role="button" @click="beforeStarting" v-else>Refaire le quizz</a>
+    </div>
+
+    <!-- Pop up avant de commencer -->
+    <div class="modal fade" id="StartPopUp" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalCenterTitle">Quizz</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Vous êtes sur le point de commencer le test et il durera 10 minutes.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"
+                        @click="beforeStartingCanceled">Abandonner</button>
+                    <button type="button" class="btn btn-primary" @click="start">Je suis prêt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- le quizz le meme a commencé -->
+    <div class="container my-4 bg-light" v-if="started">
+        
+            <form action="" class=" col-sm-12">
+
+                <div class="row d-flex py-3 px-2 m-0 " v-for="q in questions">
+                    <div class="col-xl-2 col-sm-6 mx-2  text-wrap">
+                        <p class="alert alert-success text-wrap">
+                            ${q.points} point pour cette question
+                        </p>
+                    </div>
+                    <div class="col-xl-9 col-sm-12 mx-2 border text-wrap rounded bg-white">
+                        <h1 class="display-4 text-center"> ${q.question} </h1>
+                        <hr>
+                        <div class="form-goup">
+                            <div v-for="proposition in q.prop" v-if='q.prop && !q.multi' class="my-2">
+                                <input :ref='q.titre' type="radio" :name='q.titre' :value="proposition.prop">
+                                ${proposition.prop} <br>
+                            </div>
+                            <div v-if='q.prop.length <= 0' class="my-2">
+                                <input :ref='q.titre' type="text" :name='q.titre' class="form-control "
+                                    placeholder="faut écrire le nom du président ici">
+                            </div>
+                            <div v-if='q.prop && q.multi' v-for="proposition in q.prop" class="my-2">
+                                <input :ref='q.titre' type="checkbox" :name='q.titre' :value="proposition.prop">
+                                ${proposition.prop} <br>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+
+
+                <div class="d-flex justify-content-around bg-dark  px-2 px-sm-2  my-2 mx-5">
+                    <div>
+                        <p class="h6 text-lead text-center bg-white text-muted border rounded px-2 my-2">
+                            temps restant: <br> <span id="timer" class="text-dark">10:00</span>
+                        </p>
+                    </div>
+                    <div>
+                        <input type="submit" value="j'ai fini" class="btn btn-primary my-2" @click.prevent='finished'>
+
+                    </div>
+                </div>
+
+
+            </form>
+
+        
+
+
+
+
+
+    </div>
+
+    <div class="modal fade" id="ResultPopUp" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalCenterTitle">Resultat du quizz</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-danger" v-if=" user_point < total_points/2 ">
+                        <h1 class="display-1 ">
+                            ${user_point} / ${total_points}
+
+                        </h1>
+                        <small>
+                            Désolé vous n'avez la moyenne
+                        </small>
+                    </div>
+                    <div class="text-info text-center " v-if=" user_point == total_points/2 ">
+                        <h1 class="display-1 ">
+                            ${user_point} / ${total_points}
+
+                        </h1>
+                        <small>
+                            Vous avez la moyenne juste vous pouvez faire mieux
+                        </small>
+                    </div>
+                    <div class="text-success" v-if=" user_point > total_points/2 ">
+                        <h1 class="display-1 ">
+                            ${user_point} / ${total_points}
+
+                        </h1>
+                        <small>
+                            Félicitation ${user} vous avez eu au dela de la moyenne
+                        </small>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+</div>
+{% endblock content %}
+
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="{% static 'js/vue.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+{% endblock scripts %}
